@@ -1,12 +1,21 @@
+// includes
 #include <Wire.h>
 #include <Adafruit_Sensor.h>
 #include <Adafruit_ADXL345.h>
+
+// defines
+#define filterSamples   13              // filterSamples should  be an odd number, no smaller than 3
 
 /* Assign a unique ID to this sensor at the same time */
 Adafruit_ADXL345 accel = Adafruit_ADXL345(12345);
 int yellowLed = 9; // Yellow LED on pin 10.
 int yellowLed2 = 3; // Yellow LED on pin 3.
 
+int sensSmoothArray1 [filterSamples];   // array for holding raw sensor values for sensor1 
+
+int rawData1, smoothData1;  // variables for sensor1 data
+
+int testVar;
 
 void displaySensorDetails(void)
 {
@@ -137,10 +146,11 @@ void setup(void)
   displaySensorDetails();
   
   /* Display additional settings (outside the scope of sensor_t) */
-  displayDataRate();
+  accel.setDataRate(ADXL345_DATARATE_1600_HZ);  // Set data rate to 1600hz
+  displayDataRate();                            // Display the data rate
 
   displayRange();
-  Serial.println("");
+  Serial.println("X, Y, Z,");
 }
 
 void loop(void) 
@@ -148,11 +158,17 @@ void loop(void)
   /* Get a new sensor event */ 
   sensors_event_t event; 
   accel.getEvent(&event);
+    
+    
+    
   
     /* Display the results (acceleration is measured in m/s^2) */
-    Serial.print("X, "); Serial.print(event.acceleration.x); Serial.print(",  ");
-    Serial.print("Y, "); Serial.print(event.acceleration.y); Serial.print(",  ");
-    Serial.print("Z, "); Serial.print(event.acceleration.z); Serial.print(",  ");Serial.println("m/s^2 ");
+    Serial.print(event.acceleration.x); Serial.print(",  "); // X
+    Serial.print(event.acceleration.y); Serial.print(",  "); // Y
+    Serial.print(event.acceleration.z); Serial.println(",  "); // Z
+    
+    
+  
   
     /* LED on conditional */
     if (event.acceleration.x > 3) {
@@ -167,6 +183,69 @@ void loop(void)
     if (event.acceleration.y < 3) {
       digitalWrite(yellowLed2, LOW); // Turn yellowLed off.
     }
-    delay(100);
+   /* delay(500);*/
   
 }
+
+// digitalSmooth documentation "http://playground.arduino.cc/Main/DigitalSmooth"
+int digitalSmooth(int rawIn, int *sensSmoothArray){     // "int *sensSmoothArray" passes an array to the function - the asterisk indicates the array name is a pointer
+  int j, k, temp, top, bottom;
+  long total;
+  static int i;
+ // static int raw[filterSamples];
+  static int sorted[filterSamples];
+  boolean done;
+
+  i = (i + 1) % filterSamples;    // increment counter and roll over if necc. -  % (modulo operator) rolls over variable
+  sensSmoothArray[i] = rawIn;                 // input new data into the oldest slot
+
+  // Serial.print("raw = ");
+
+  for (j=0; j<filterSamples; j++){     // transfer data array into anther array for sorting and averaging
+    sorted[j] = sensSmoothArray[j];
+  }
+
+  done = 0;                // flag to know when we're done sorting              
+  while(done != 1){        // simple swap sort, sorts numbers from lowest to highest
+    done = 1;
+    for (j = 0; j < (filterSamples - 1); j++){
+      if (sorted[j] > sorted[j + 1]){     // numbers are out of order - swap
+        temp = sorted[j + 1];
+        sorted [j+1] =  sorted[j] ;
+        sorted [j] = temp;
+        done = 0;
+      }
+    }
+  }
+
+/*
+  for (j = 0; j < (filterSamples); j++){    // print the array to debug
+    Serial.print(sorted[j]); 
+    Serial.print("   "); 
+  }
+  Serial.println();
+*/
+
+  // throw out top and bottom 15% of samples - limit to throw out at least one from top and bottom
+  bottom = max(((filterSamples * 15)  / 100), 1); 
+  top = min((((filterSamples * 85) / 100) + 1  ), (filterSamples - 1));   // the + 1 is to make up for asymmetry caused by integer rounding
+  k = 0;
+  total = 0;
+  for ( j = bottom; j< top; j++){
+    total += sorted[j];  // total remaining indices
+    k++; 
+    // Serial.print(sorted[j]); 
+    // Serial.print("   "); 
+  }
+
+//  Serial.println();
+//  Serial.print("average = ");
+//  Serial.println(total/k);
+  return total / k;    // divide by number of samples
+}
+
+
+
+
+
+
