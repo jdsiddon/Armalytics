@@ -17,6 +17,10 @@ int rawData1, smoothData1;  // variables for sensor1 data
 
 int testVar;
 
+int sensorValue; // Variable to hold accelerometer data.
+
+String toprint; // Variable to hold accelerometer data in concatenated string.
+
 void displaySensorDetails(void)
 {
   sensor_t sensor;
@@ -121,7 +125,7 @@ void displayRange(void)
 
 void setup(void) 
 {
-  Serial.begin(9600);
+  Serial.begin(115200);
   Serial.println("Accelerometer Test"); Serial.println("");
   
   pinMode(yellowLed, OUTPUT); // Set yellowLed to an output mode.
@@ -146,7 +150,7 @@ void setup(void)
   displaySensorDetails();
   
   /* Display additional settings (outside the scope of sensor_t) */
-  accel.setDataRate(ADXL345_DATARATE_1600_HZ);  // Set data rate to 1600hz
+  accel.setDataRate(ADXL345_DATARATE_800_HZ);  // Set data rate to 1600hz
   displayDataRate();                            // Display the data rate
 
   displayRange();
@@ -158,15 +162,32 @@ void loop(void)
   /* Get a new sensor event */ 
   sensors_event_t event; 
   accel.getEvent(&event);
+    int sensorDataArray[71]; // Array that holds 72 bytes
+    int idx = 0;
     
-    
-    
+   
   
     /* Display the results (acceleration is measured in m/s^2) */
-    Serial.print(event.acceleration.x); Serial.print(",  "); // X
-    Serial.print(event.acceleration.y); Serial.print(",  "); // Y
-    Serial.print(event.acceleration.z); Serial.println(",  "); // Z
     
+    Serial.print(micros()); Serial.print(",");   // print number of micro-seconds
+    Serial.print(event.acceleration.x); Serial.print(","); // X
+    Serial.print(event.acceleration.y); Serial.print(","); // Y
+    Serial.print(event.acceleration.z); Serial.println(","); // Z
+    
+    /* tried concatenating event.acceleration.x with other varible types, getting error because it is type float, others aren't.
+    toprint = 0;
+    toprint += micros();
+    toprint += ',';
+    char * s = malloc(snprintf(NULL, 0,  event.acceleration.x) +1;
+    sprintf(s, "%s");    
+    Serial.println(toprint);
+    */
+  
+  /* Think I need to use snprintf, snprintf
+      Example; sprintf(myCharPointer, 2, "%f", myFloat); this statement will store
+      the string representation of myFloat into myCharPointer. 2 is the length of 
+      the char variable myCharPointer.  With 2 myCharPointer will only hold one
+      byte of data because it needs the other byte for the /0 terminator.*/
     
   
   
