@@ -162,8 +162,7 @@ void loop(void)
   /* Get a new sensor event */ 
   sensors_event_t event; 
   accel.getEvent(&event);
-    int sensorDataArray[71]; // Array that holds 72 bytes
-    int idx = 0;
+    
     
    
   
@@ -172,7 +171,7 @@ void loop(void)
     Serial.print(micros()); Serial.print(",");   // print number of micro-seconds
     Serial.print(event.acceleration.x); Serial.print(","); // X
     Serial.print(event.acceleration.y); Serial.print(","); // Y
-    Serial.print(event.acceleration.z); Serial.println(","); // Z
+    Serial.println(event.acceleration.z); // Z
     
     /* tried concatenating event.acceleration.x with other varible types, getting error because it is type float, others aren't.
     toprint = 0;
